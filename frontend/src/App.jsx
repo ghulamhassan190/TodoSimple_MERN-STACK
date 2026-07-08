@@ -19,6 +19,8 @@ const App = () => {
       
       const data = await response.json(); // FIX: {data} ki jagah direct data kiya
       setTodos(data);
+      console.log(data);
+      
     } catch (error) {
       console.error("Error fetching data:", error);
     }
