@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
 const isLocalhost = window.location.hostname === 'localhost';
+// ✨ Apne mutabik sahi URL picked hai
 const API_URL = isLocalhost ? 'https://todo-simple-mern-stack.vercel.app/api/todos' : '/api/todos';
 
 const App = () => {
@@ -11,16 +12,22 @@ const App = () => {
     fetchTodo()
   }, [])
 
-  // 1. Fetch All Todos (Fixed Destructuring Galti)
+  // 1. Fetch All Todos (Strictly matching your response structure)
   const fetchTodo = async () => {
     try {
       const response = await fetch(API_URL);
       if (!response.ok) throw new Error('Failed to fetch todos');
       
-      const data = await response.json(); // FIX: {data} ki jagah direct data kiya
-      setTodos(data);
-      console.log(data);
+      const data = await response.json();
       
+      // Agar direct array hai ya nested, dono ko handle karega
+      if (Array.isArray(data)) {
+        setTodos(data);
+      } else if (data && Array.isArray(data.data)) {
+        setTodos(data.data);
+      } else if (data && Array.isArray(data.todos)) {
+        setTodos(data.todos);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -41,7 +48,9 @@ const App = () => {
       if (!response.ok) throw new Error('Failed to add todo');
 
       const data = await response.json();
-      setTodos([...todos, data]);
+      const newTodo = data.data ? data.data : (data.todo ? data.todo : data);
+      
+      setTodos([...todos, newTodo]);
       setInput('');
     } catch (error) {
       console.error("Error adding todo:", error);
@@ -59,18 +68,19 @@ const App = () => {
     }
   };
 
-  // 4. Toggle Complete Status (Premium UI Dynamic Interaction)
+  // 4. Toggle Complete Status (🔄 Updated to match 'isComplete')
   const toggleComplete = async (id, currentStatus) => {
     try {
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: !currentStatus })
+        body: JSON.stringify({ isComplete: !currentStatus }) // Fix: completed ki jagah isComplete
       });
       if (!response.ok) throw new Error('Failed to update todo');
       
       const updatedData = await response.json();
-      setTodos(todos.map(todo => todo._id === id ? updatedData : todo));
+      const finalUpdated = updatedData.data ? updatedData.data : updatedData;
+      setTodos(todos.map(todo => todo._id === id ? finalUpdated : todo));
     } catch (error) {
       console.error("Error updating todo:", error);
     }
@@ -107,14 +117,13 @@ const App = () => {
           ) : (
             <ul style={styles.list}>
               {Array.isArray(todos) && todos.map(todo => (
-                <li key={todo._id} style={todo.completed ? styles.todoItemCompleted : styles.todoItem}>
+                <li key={todo._id} style={todo.isComplete ? styles.todoItemCompleted : styles.todoItem}>
                   
-                  {/* Custom Checkbox Container */}
                   <div style={styles.todoLeft}>
                     <input
                       type="checkbox"
-                      checked={todo.completed || false}
-                      onChange={() => toggleComplete(todo._id, todo.completed)}
+                      checked={todo.isComplete || false} // Fix: completed ki jagah isComplete
+                      onChange={() => toggleComplete(todo._id, todo.isComplete)}
                       style={styles.checkbox}
                     />
                     <span style={todo.isComplete ? styles.textCompleted : styles.text}>
@@ -122,7 +131,6 @@ const App = () => {
                     </span>
                   </div>
 
-                  {/* Delete Action */}
                   <button onClick={() => deleteTodo(todo._id)} style={styles.deleteButton}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="3 6 5 6 21 6"></polyline>
@@ -141,151 +149,26 @@ const App = () => {
   )
 }
 
-// 🎨 Out-Class Styles Object (Premium Dark Glassmorphism)
+// 🎨 Premium Out-Class Styles
 const styles = {
-  dashboard: {
-    minHeight: '100vh',
-    width: '100vw',
-    background: 'radial-gradient(circle at 50% 50%, #1a1b26 0%, #10111a 100%)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontFamily: "'Inter', sans-serif",
-    padding: '20px',
-    boxSizing: 'border-box',
-    color: '#f8fafc'
-  },
-  glassCard: {
-    background: 'rgba(255, 255, 255, 0.03)',
-    backdropFilter: 'blur(16px)',
-    borderRadius: '24px',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    width: '100%',
-    maxWidth: '520px',
-    padding: '35px',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-  },
-  header: {
-    marginBottom: '25px',
-    textAlign: 'center'
-  },
-  title: {
-    fontSize: '32px',
-    fontWeight: '800',
-    letterSpacing: '-0.5px',
-    background: 'linear-gradient(to right, #6366f1, #a855f7)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    margin: '0 0 5px 0'
-  },
-  subtitle: {
-    color: '#64748b',
-    fontSize: '14px',
-    margin: 0,
-    fontWeight: '500'
-  },
-  form: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '30px'
-  },
-  input: {
-    flex: 1,
-    background: '#161722',
-    border: '1px solid rgba(255, 255, 255, 0.05)',
-    borderRadius: '14px',
-    padding: '14px 18px',
-    color: '#f8fafc',
-    fontSize: '15px',
-    outline: 'none',
-    transition: 'all 0.2s',
-  },
-  addButton: {
-    background: '#6366f1',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '14px',
-    padding: '0 24px',
-    fontSize: '15px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
-  },
-  listContainer: {
-    maxHeight: '350px',
-    overflowY: 'auto'
-  },
-  list: {
-    listStyle: 'none',
-    padding: 0,
-    margin: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-  todoItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    background: 'rgba(255, 255, 255, 0.02)',
-    border: '1px solid rgba(255, 255, 255, 0.04)',
-    borderRadius: '16px',
-    padding: '14px 18px',
-    transition: 'all 0.2s'
-  },
-  todoItemCompleted: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    background: 'rgba(255, 255, 255, 0.01)',
-    border: '1px solid rgba(255, 255, 255, 0.02)',
-    borderRadius: '16px',
-    padding: '14px 18px',
-    opacity: 0.6
-  },
-  todoLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
-    flex: 1
-  },
-  checkbox: {
-    width: '18px',
-    height: '18px',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    accentColor: '#6366f1'
-  },
-  text: {
-    fontSize: '15px',
-    color: '#e2e8f0',
-    fontWeight: '500'
-  },
-  textCompleted: {
-    fontSize: '15px',
-    color: '#64748b',
-    textDecoration: 'line-through',
-    fontWeight: '500'
-  },
-  deleteButton: {
-    background: 'transparent',
-    border: 'none',
-    color: '#ef4444',
-    cursor: 'pointer',
-    padding: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: 0.7,
-    transition: 'opacity 0.2s'
-  },
-  emptyState: {
-    textAlign: 'center',
-    color: '#64748b',
-    padding: '20px 0',
-    fontSize: '14px'
-  }
+  dashboard: { minHeight: '100vh', width: '100vw', background: 'radial-gradient(circle at 50% 50%, #1a1b26 0%, #10111a 100%)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: "'Inter', sans-serif", padding: '20px', boxSizing: 'border-box', color: '#f8fafc' },
+  glassCard: { background: 'rgba(255, 255, 255, 0.03)', backdropFilter: 'blur(16px)', borderRadius: '24px', border: '1px solid rgba(255, 255, 255, 0.08)', width: '100%', maxWidth: '520px', padding: '35px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' },
+  header: { marginBottom: '25px', textAlign: 'center' },
+  title: { fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: '0 0 5px 0' },
+  subtitle: { color: '#64748b', fontSize: '14px', margin: 0, fontWeight: '500' },
+  form: { display: 'flex', gap: '12px', marginBottom: '30px' },
+  input: { flex: 1, background: '#161722', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '14px', padding: '14px 18px', color: '#f8fafc', fontSize: '15px', outline: 'none' },
+  addButton: { background: '#6366f1', color: '#ffffff', border: 'none', borderRadius: '14px', padding: '0 24px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' },
+  listContainer: { maxHeight: '350px', overflowY: 'auto' },
+  list: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' },
+  todoItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)', borderRadius: '16px', padding: '14px 18px' },
+  todoItemCompleted: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.02)', borderRadius: '16px', padding: '14px 18px', opacity: 0.6 },
+  todoLeft: { display: 'flex', alignItems: 'center', gap: '14px', flex: 1 },
+  checkbox: { width: '18px', height: '18px', borderRadius: '6px', cursor: 'pointer', accentColor: '#6366f1' },
+  text: { fontSize: '15px', color: '#e2e8f0', fontWeight: '500' },
+  textCompleted: { fontSize: '15px', color: '#64748b', textDecoration: 'line-through', fontWeight: '500' },
+  deleteButton: { background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7 },
+  emptyState: { textAlign: 'center', color: '#64748b', padding: '20px 0', fontSize: '14px' }
 }
 
 export default App;
