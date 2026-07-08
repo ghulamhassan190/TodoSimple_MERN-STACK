@@ -117,7 +117,7 @@ const App = () => {
                       onChange={() => toggleComplete(todo._id, todo.completed)}
                       style={styles.checkbox}
                     />
-                    <span style={todo.completed ? styles.textCompleted : styles.text}>
+                    <span style={todo.isComplete ? styles.textCompleted : styles.text}>
                       {todo.title}
                     </span>
                   </div>
