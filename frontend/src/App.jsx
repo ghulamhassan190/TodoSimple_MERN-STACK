@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
-const API_URL = 'http://localhost:5000/api/todos'
+const isLocalhost = window.location.hostname === 'localhost';
+const API_URL = isLocalhost ? 'http://localhost:5000/api/todos' : '/api/todos';
 
 const App = () => {
   const [todos, setTodos] = useState([])
