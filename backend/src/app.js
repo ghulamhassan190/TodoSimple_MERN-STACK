@@ -65,7 +65,8 @@ app.put("/api/todos/:id",async(req,res)=>{
     res.status(401).json({message:error.message})
   }
 })
-app.listen(process.env.PORT,()=>{
-  console.log(`server is running is PORT 5000`);
+// app.listen(process.env.PORT,()=>{
+//   console.log(`server is running is PORT 5000`);
   
-})
+// })
+export default app
